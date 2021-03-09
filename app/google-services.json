@@ -15,7 +15,7 @@
       "oauth_client": [
         {
           "client_id": "457718837790-dscjqorrbo5f5ptodqd6bs4e808its1m.apps.googleusercontent.com",
-          "client_type": 1,
+          "client_type": 3,
           "android_info": {
             "package_name": "a.b.c.loginandroid",
             "certificate_hash": "7d208390b6729310daf2d8d2860491383feeec70"

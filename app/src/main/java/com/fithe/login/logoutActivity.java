@@ -33,6 +33,7 @@ public class logoutActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 signOut();
+
             }
         });
 
@@ -57,8 +58,7 @@ public class logoutActivity extends AppCompatActivity {
     //구글 로그아웃
     private void signOut(){
         FirebaseAuth.getInstance().signOut();
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+
     }
     //네이버 로그아웃
     private void signOut1(){
