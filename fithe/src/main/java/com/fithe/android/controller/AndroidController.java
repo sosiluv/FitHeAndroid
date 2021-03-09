@@ -35,7 +35,7 @@ public class AndroidController {
         String pwd = req.getParameter("pwd");
         System.out.println("id>>>>>>>>>>>>>>>"+id);
         System.out.println("pwd>>>>>>>>>>>>>>>"+pwd);
-
+  
         
         amvo.setId(id);
         amvo.setPassword(pwd);
