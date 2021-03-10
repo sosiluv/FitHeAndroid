@@ -60,6 +60,11 @@ dependencies {
     implementation "androidx.browser:browser:$android_x_version"
     implementation "androidx.legacy:legacy-support-v4:$android_x_version"
 
+    implementation 'com.google.android.gms:play-services-maps:17.0.0'
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+    implementation 'com.google.android.material:material:1.4.0-alpha01'
+    implementation 'noman.placesapi:placesAPI:1.1.3'
+
 
 
 }

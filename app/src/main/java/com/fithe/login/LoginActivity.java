@@ -40,13 +40,15 @@ import com.fithe.login.common.Users;
 import com.fithe.login.common.Web;
 import com.fithe.login.loginandroid.R;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class LoginActivity extends AppCompatActivity {
 
     Button loginbtn,regbtn,findpw;
     EditText mid, mpw;
     // 현재시간 초기화
     private long backBtnTime = 0;
-
     //구글 로그인
     private FirebaseAuth mAuth = null;
     private GoogleSignInClient mGoogleSignInClient;
@@ -60,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
     private static OAuthLogin mOAuthLoginInstance;
     private static Context mContext;
     private OAuthLoginButton mOAuthLoginButton;
+    String result="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,7 +141,9 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+
     }
+
 
     // http통신--------------------------------------------------
     public class MapTask extends AsyncTask<Map, Integer, String> {
@@ -186,8 +191,12 @@ public class LoginActivity extends AppCompatActivity {
             Users user = gson.fromJson(s, Users.class);
 
             if(user != null && user.getEnabled() != 0) {
-                Toast.makeText(getApplicationContext(), "로그인", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "로그인 성공", Toast.LENGTH_SHORT).show();
                 Intent intent1 = new Intent(getApplicationContext(), PhoneAuthActivity.class);
+                intent1.putExtra("uid",user.getId());
+                intent1.putExtra("uemail",user.getEmail());
+                intent1.putExtra("ugender",user.getGender());
+
                 startActivity(intent1);
             } else {
                 Toast.makeText(getApplicationContext(), "회원 정보가 올바르지 않습니다.", Toast.LENGTH_SHORT).show();
@@ -195,7 +204,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    // 구글로그인 함수 ------------------------------------------------------
+
+
+    // 구글로그인  ------------------------------------------------------
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
@@ -204,27 +215,34 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+        System.out.println("onActivityResult>>>>>>>>>>>>>>>>>>>>>>>>>>");
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
+            System.out.println("onActivityResult>>>>>>>>>>>>>>>>>>>>>>>>>>");
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
+                System.out.println("onActivityResult>>>>>>>>>>>>>>>>>>>>>>>>>>");
                 // Google Sign In was successful, authenticate with Firebase
                 GoogleSignInAccount account = task.getResult(ApiException.class);
+                System.out.println("account>>>>>>>>>>>>>>>>>>>>>>>>>>"+account);
                 firebaseAuthWithGoogle(account);
             } catch (ApiException e) {
+                Toast.makeText(this, "구글 로그인에 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+
             }
         }
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-
+        System.out.println("firebaseAuthWithGoogle>>>>>>>>>>>>>>>>>>>>>>>>>>");
         AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
+                            System.out.println("onComplete>>>>>>>>>>>>>>>>>>>>>>>>>>");
                             // Sign in success, update UI with the signed-in user's information
 //                            Snackbar.make(findViewById(R.id.login_btn), "Authentication Successed.", Snackbar.LENGTH_SHORT).show();
                             FirebaseUser user = mAuth.getCurrentUser();
@@ -240,7 +258,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private void updateUI(FirebaseUser user) { //update ui code here
         if (user != null) {
-            Intent intent = new Intent(this, logoutActivity.class);
+            Toast.makeText(this, "Google 로그인 성공.", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, NaviMainActivity.class);
             startActivity(intent);
             finish();
         }
@@ -248,6 +267,7 @@ public class LoginActivity extends AppCompatActivity {
 
     //-------------------네이버 로그인 함수
     private void initData(){
+
         mOAuthLoginInstance = OAuthLogin.getInstance();
         mOAuthLoginInstance.init(mContext,OAUTH_CLIENT_ID,OAUTH_CLIENT_SECRET,OAUTH_CLIENT_NAME);
         mOAuthLoginButton = findViewById(R.id.naverButton);
@@ -262,9 +282,13 @@ public class LoginActivity extends AppCompatActivity {
                 String accessToken = mOAuthLoginInstance.getAccessToken(mContext);
                 String refreshToken = mOAuthLoginInstance.getRefreshToken(mContext);
                 long expiresAt = mOAuthLoginInstance.getExpiresAt(mContext);
+                Toast.makeText(mContext,"Naver 로그인 성공",Toast.LENGTH_SHORT).show();
 
-                Toast.makeText(mContext,"success:"+ accessToken,Toast.LENGTH_SHORT).show();
-                redirectSignupActivity();
+
+              RequestApiTask task = new RequestApiTask(mContext, mOAuthLoginInstance);
+              task.execute();// 로그인이 성공하면 네이버의 계정 정보를 가져온다
+
+
             }else{
                 String errorCode = mOAuthLoginInstance.getLastErrorCode(mContext).getCode();
                 String errorDesc = mOAuthLoginInstance.getLastErrorDesc(mContext);
@@ -273,11 +297,57 @@ public class LoginActivity extends AppCompatActivity {
         };
     };
 
-    protected void redirectSignupActivity(){
-        final Intent intent = new Intent(this, NaviMainActivity.class);
-        startActivity(intent);
-        finish();
+    // 네이버 사용자 정보 가져오기 쓰레드로 처리 해야함
+    public class RequestApiTask extends AsyncTask<Void, Void, String> {
+        private final Context mContext;
+        private final OAuthLogin mOAuthLoginInstance;
+        public RequestApiTask(Context mContext, OAuthLogin mOAuthLoginModule) {
+            this.mContext = mContext;
+            this.mOAuthLoginInstance = mOAuthLoginModule;
+        }
+
+        @Override
+        protected void onPreExecute() {}
+
+        @Override
+        protected String doInBackground(Void... params) {
+            String url = "https://openapi.naver.com/v1/nid/me";
+            String at = mOAuthLoginInstance.getAccessToken(mContext);
+            return mOAuthLoginInstance.requestApi(mContext, at, url);
+        }
+
+        protected void onPostExecute(String content) {
+            try {
+                //json객체를 문자열로 변환시켜서 intent로 보내줌
+                System.out.println("onPostExecute>>>>>>>>>>>>>>>>>>>>>>>>");
+                JSONObject loginResult = new JSONObject(content);
+                if (loginResult.getString("resultcode").equals("00")){
+                    System.out.println("onPostExecute> getString>>>>>>>>>>>>>>>>>>>>>>>");
+                    JSONObject response = loginResult.getJSONObject("response");
+                    String id = response.getString("id");
+                    String email = response.getString("email");
+                    String mobile = response.getString("mobile");
+                    Log.d("response", "response " + response);
+                    Intent intent = new Intent(getApplicationContext(), NaviMainActivity.class);
+                    intent.putExtra("id",id);
+                    intent.putExtra("email",email);
+                    intent.putExtra("mobile",mobile);
+                    startActivity(intent);
+                    Bundle bundle = new Bundle();
+                    finish();
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
+
+//    protected void redirectSignupActivity(){
+//        final Intent intent = new Intent(this, logoutActivity.class);
+//        startActivity(intent);
+//        finish();
+//    }
 
     //뒤로가기 버튼 두번 누르면 종료
     @Override
@@ -294,4 +364,13 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+
+
 }
+
+
+
+
+
+
+

@@ -44,12 +44,6 @@ public class PhoneAuthActivity extends AppCompatActivity  {
 
     private static final String KEY_VERIFY_IN_PROGRESS = "key_verify_in_progress";
 
-    private static final int STATE_INITIALIZED = 1;
-    private static final int STATE_CODE_SENT = 2;
-    private static final int STATE_VERIFY_FAILED = 3;
-    private static final int STATE_VERIFY_SUCCESS = 4;
-    private static final int STATE_SIGNIN_FAILED = 5;
-    private static final int STATE_SIGNIN_SUCCESS = 6;
 
     private FirebaseAuth mAuth;
     private String mVerificationId;
@@ -57,6 +51,8 @@ public class PhoneAuthActivity extends AppCompatActivity  {
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
     private PhoneAuthProvider.ForceResendingToken mResendToken;
     //public ActivityPhoneAuthBinding mBinding;
+
+    private String uid,uemail,ugender;
 
 
 
@@ -72,6 +68,11 @@ public class PhoneAuthActivity extends AppCompatActivity  {
         buttonVerifyPhone = (Button)findViewById(R.id.validateButton);
         buttonResend = (Button)findViewById(R.id.buttonResend);
         imageButton2 = (ImageButton)findViewById(R.id.imageButton2);
+
+        Intent intent = getIntent();
+        uid=intent.getExtras().getString("uid");
+        uemail=intent.getExtras().getString("uemail");
+        ugender=intent.getExtras().getString("ugender");
 
         buttonResend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,7 +91,7 @@ public class PhoneAuthActivity extends AppCompatActivity  {
                     return;
                 }
                 System.out.println("startPhoneNumberVerification진입전");
-                startPhoneNumberVerification(fieldPhoneNumber.getText().toString());
+                startPhoneNumberVerification("+82"+fieldPhoneNumber.getText().toString());
             }
         });
 
@@ -231,6 +232,7 @@ public class PhoneAuthActivity extends AppCompatActivity  {
 
                             FirebaseUser user = task.getResult().getUser();
                             System.out.println("user>>>>>>>>>>>>>>>>>>>>>>"+user);
+                            FirebaseAuth.getInstance().signOut();
                             // [START_EXCLUDE]
                             UpdateUI();
                             // [END_EXCLUDE]
@@ -269,11 +271,16 @@ public class PhoneAuthActivity extends AppCompatActivity  {
     }
 
     private void UpdateUI(){
-        Intent intent = new Intent(getApplicationContext(), NaviMainActivity.class);
+        Intent intent1 = new Intent(getApplicationContext(), NaviMainActivity.class);
+        intent1.putExtra("uid",uid);
+        intent1.putExtra("uemail",uemail);
+        intent1.putExtra("ugender",ugender);
+        System.out.println("uemailkjljkljlkjkljlkjkljkljkl>>>>>>>>>>>>>>>"+uemail);
         Toast.makeText(PhoneAuthActivity.this,
                 "인증 성공",
                 Toast.LENGTH_SHORT).show();
-        startActivity(intent);
+
+        startActivity(intent1);
         finish();
 
     }
