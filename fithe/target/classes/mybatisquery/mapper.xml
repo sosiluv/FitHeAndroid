@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fithe.android.dao.AndroidDAO">
+
+
+	<!-- 로그인 체크 -->
+	<select id="confirmUser" resultType="String">
+        SELECT enabled
+        FROM users
+        WHERE id = #{id,jdbcType=VARCHAR} AND password = #{password,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 회원가입 -->
+    <insert id="AndroidInsert" parameterType="com.fithe.android.vo.AndroidMemberVO">
+    	INSERT INTO users (id, password,email,gender) VALUES (
+    	#{id,jdbcType=VARCHAR},
+    	#{password,jdbcType=VARCHAR},
+    	#{email,jdbcType=VARCHAR},
+    	#{gender,jdbcType=VARCHAR}
+    	)
+    </insert>
+
+	<!-- 아이디 체크 -->
+	<select id="idCheck" parameterType="com.fithe.android.vo.AndroidMemberVO" resultType="int">
+        SELECT COUNT(*)
+        FROM users
+        WHERE id = #{id,jdbcType=VARCHAR}
+    </select>
+    
+    <!-- 비밀번호 찾기 -->
+    <select id="findPw"  resultType="String">
+     SELECT password
+        FROM users
+        WHERE email = #{email,jdbcType=VARCHAR}
+    </select>
+
+</mapper>
